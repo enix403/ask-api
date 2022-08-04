@@ -1,0 +1,28 @@
+django-cors-headers==3.13.0
+  Django==4.1
+    asgiref==3.5.2
+    sqlparse==0.4.2
+django-debug-toolbar==3.5.0
+  Django==4.1
+    asgiref==3.5.2
+    sqlparse==0.4.2
+  sqlparse==0.4.2
+django-extensions==3.2.0
+  Django==4.1
+    asgiref==3.5.2
+    sqlparse==0.4.2
+django-split-settings==1.1.0
+django-types==0.15.0
+djangorestframework==3.13.1
+  Django==4.1
+    asgiref==3.5.2
+    sqlparse==0.4.2
+  pytz==2022.1
+envtoml==0.1.2
+  toml==0.10.2
+gunicorn==20.1.0
+  setuptools==58.1.0
+passlib==1.7.4
+PyJWT==2.4.0
+python-dateutil==2.8.2
+  six==1.16.0

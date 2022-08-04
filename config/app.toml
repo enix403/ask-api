@@ -1,0 +1,31 @@
+# The main configuration file
+
+# All the env variables are duplicated here into toml keys to allow the app to use a unified api for
+# accessing the config
+
+[main]
+name = 'ASK API'
+version = '1.0.0'
+
+# Migration Branch Name
+# A unique folder name to store migrations for this branch of repository
+# This exists so that checking out a different branch is smooth and the migration files won't
+# conflict with those of other branches.
+# Note: This must be valid python identifier name
+# Example: 'master' or 'new_feature'
+migration_folder_name = 'main'
+
+# A unique secret key
+secret_key = "$APP_SECRET_KEY"
+token_key = "$APP_TOKEN_KEY"
+
+[db]
+name = "$DB_NAME"
+pass = "$DB_PASS"
+user = "$DB_USER"
+host = "$DB_HOST"
+port = "$DB_PORT"
+
+[runtime]
+debug = "$APP_DEBUG"
+force_serve_static_files = "$FORCE_SERVE_STATIC_FILES"
