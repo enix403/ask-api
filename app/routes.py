@@ -3,6 +3,8 @@ from django.urls import re_path, path, include
 
 from app.communication import ApiRequest, ApiResponse, api_view
 
+from app.core.authentication.apiviews import signup_user
+
 @api_view()
 def not_implemented(_):
     return ApiResponse({'error': 'Cannot GET /'}, status=400)
@@ -15,5 +17,7 @@ urlpatterns = [
     path("", not_implemented),
     path('v1/', include([
         path("", v1_index),
+
+        path('auth/signup/', signup_user)
     ]))
 ]

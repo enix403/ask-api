@@ -29,10 +29,10 @@ APPEND_SLASH = False
 MESSAGE_LEVEL = 0 # display all messages (above the given level, and 0 is the min level)
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.file'
-SESSION_FILE_PATH = root_directory('storage/sessions', create_missing=True)
+SESSION_FILE_PATH = root_directory(['storage', 'sessions'], create_missing=True)
 
 STATIC_URL = '/static/'
-STATIC_ROOT = root_directory('storage/assets', create_missing=True) + '/'  # target for collectstatic ( the ending '/' is required )
+STATIC_ROOT = root_directory(['storage', 'assets'], create_missing=True) + '/'  # target for collectstatic ( the ending '/' is required )
 
 # places to look for static assets
 STATICFILES_DIRS = []

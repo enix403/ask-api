@@ -1,5 +1,5 @@
 from app.bootstrap.config import Config
-from app.utils import resolve_root
+from app.utils import resolve_root, root_directory
 
 # DATABASES = {
 #     'default': {
@@ -17,11 +17,11 @@ DATABASES = {
         'NAME':  resolve_root('db.sqlite'),
     }
 }
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 migration_subfolder = Config.get('main.migration_folder_name')
 if not migration_subfolder:
     migration_subfolder = 'unnamed'
 
+root_directory(['migrations', migration_subfolder], create_missing=True)
 MIGRATION_MODULES = {'app': f'migrations.{migration_subfolder}'}
-
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

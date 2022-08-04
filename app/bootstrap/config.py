@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, Any
 
 import envtoml
 from app.utils import resolve_root
@@ -13,7 +13,7 @@ class Config:
             cls._config_dict = envtoml.load(f)
 
     @classmethod
-    def get(cls, key: str, default=None):
+    def get(cls, key: str, default=None) -> Any:
         """
         Returns the value of the config from the given key.
 
@@ -32,7 +32,7 @@ class Config:
 
 
     @classmethod
-    def get_bool(cls, key: str):
+    def get_bool(cls, key: str) -> bool:
         val = cls.get(key)
 
         # Make sure it also works for env parsers that convert the string 'true' to the value `True`

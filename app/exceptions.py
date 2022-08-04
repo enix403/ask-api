@@ -49,6 +49,7 @@ class ApiException(HttpException):
 
 
 class ApiExceptionCollection:
-    NotFound = ApiException.from_http_status_code(HTTPStatus.NOT_FOUND)
     BadRequest = ApiException.from_http_status_code(HTTPStatus.BAD_REQUEST)
+    Forbidden = ApiException.from_http_status_code(HTTPStatus.FORBIDDEN)
+    NotFound = ApiException.from_http_status_code(HTTPStatus.NOT_FOUND)
     UnprocessableEntity = ApiException.from_http_status_code(HTTPStatus.UNPROCESSABLE_ENTITY)
