@@ -19,8 +19,8 @@ class ExceptionHandlerMiddleware:
         if isinstance(exp, ApiException):
             response = JsonResponse({
                 'type': 'error',
-                'payload': exp.data,
-                'message': exp.msg 
+                'message': exp.msg, 
+                'payload': exp.data
             }, status=exp.code)
 
             return response

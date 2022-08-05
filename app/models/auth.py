@@ -42,6 +42,7 @@ class AppUser(BaseModel['AppUser'], TimeStampedModel, UserProfileMixin):
     last_name = f.CharField(max_length=250)
 
     email = f.CharField(max_length=250)
+
     is_active = f.PositiveTinyIntegerField(default=1)
     is_deleted = f.PositiveTinyIntegerField(default=0)
 

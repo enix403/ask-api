@@ -30,33 +30,21 @@ class KeyStore:
             key.digest,
         ]);
 
-    @classmethod
-    def _hash_impl(cls, serialzed) -> str:
-        return pbkdf2_sha256.using(
-            rounds=1000,
-            salt_size=12
-        ).hash(serialzed)
-
-    @classmethod
-    def hash_raw(cls, key: GeneratedAPIKey) -> str:
-        return cls._hash_impl(cls.serialize_user(key))
-
-    @classmethod
-    def hash_user(cls, user_key: str) -> str:
-        if not user_key.startswith(cls.API_KEY_APP_PREFIX):
-            raise KeyStore.InvalidKeyError()            
-
-        return cls._hash_impl(user_key)
-
+    # @classmethod
+    # def _hash_impl(cls, serialzed) -> str:
+    #     return pbkdf2_sha256.using(
+    #         rounds=1000,
+    #         salt_size=12
+    #     ).hash(serialzed)
 
     # @classmethod
-    # def verify(cls, user_key: str, hashed: str) -> bool:
-    #     if not user_key.startswith(cls.API_KEY_APP_PREFIX):
-    #         return False
+    # def hash_raw(cls, key: GeneratedAPIKey) -> str:
+    #     return cls._hash_impl(cls.serialize_user(key))
 
-    #     try:
-    #         unprefixed = hashed[6 + 1:]
-    #         pbk_hash = unprefixed.split('.', 1)[1]
-    #         return pbkdf2_sha256.verify(user_key, pbk_hash)
-    #     except:
-    #         return False
+    # @classmethod
+    # def hash_user(cls, user_key: str) -> str:
+    #     if not user_key.startswith(cls.API_KEY_APP_PREFIX):
+    #         raise KeyStore.InvalidKeyError()
+
+    #     return cls._hash_impl(user_key)
+
