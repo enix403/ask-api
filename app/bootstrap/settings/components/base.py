@@ -34,6 +34,8 @@ SESSION_FILE_PATH = root_directory(['storage', 'sessions'], create_missing=True)
 STATIC_URL = '/static/'
 STATIC_ROOT = root_directory(['storage', 'assets'], create_missing=True) + '/'  # target for collectstatic ( the ending '/' is required )
 
+MEDIA_ROOT = root_directory(['storage', 'media'], create_missing=True) + '/'
+
 # places to look for static assets
 STATICFILES_DIRS = []
 

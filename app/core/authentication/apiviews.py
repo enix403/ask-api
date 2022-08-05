@@ -1,24 +1,36 @@
 import re
+import uuid
 
+from pathlib import Path
 from http import HTTPStatus
 from typing import Optional, Any
-from django.db.models.fields.json import KeyTransformExact
+
 from rest_framework import serializers as s
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
 
-from auth_core import AclContext, Allow
+from django.conf import settings
 
+from auth_core import AclContext
+
+from app.app_paths import AppPaths
 from app.utils.qs import qs_exists, qs_filter
-from app.models.auth import AppUser
+from app.models.auth import AppUser, ProfilePicture
 from app.exceptions import ApiException, ApiExceptionCollection
-from app.communication import api_view, ApiRequest, ApiResponse
+from app.communication import (
+    ApiRequest,
+    ApiResponse,
+)
 
 from .keystore import KeyStore
 from .engine import TR, require, FixedContextGenerator
 
 
-class CreateUniqueFieldValidator:
+class CreateSerializer(s.Serializer):
+    pass
+
+
+class UniqueFieldValidator:
     """
     Validator that corresponds to `unique=True` on a model field.
 
@@ -41,14 +53,40 @@ class CreateUniqueFieldValidator:
             raise ValidationError(self.message, code='create_unique')
 
 
+# PROFILE_PICS_STORAGE = Path(settings.MEDIA_ROOT) / 'profile_pics'
+# PROFILE_PICS_STORAGE.mkdir(parents=True, exist_ok=True)
+
+@api_view(['POST'])
+def upload_picture(request: ApiRequest) -> ApiResponse:
+    # TODO: Protect this route with at-least some app-level authorization (not user-level) to prevent spamming/DOS
+
+    file = request.FILES['image'] # type: ignore
+
+    extension = Path(file.name).suffix
+
+    name = str(uuid.uuid4())
+    location = name + extension
+
+    record = ProfilePicture()
+    record.name = name
+    record.location = location
+
+    try:
+        record.save()
+    except:
+        raise ApiException(
+            code=HTTPStatus.INTERNAL_SERVER_ERROR, msg="Failed to upload image. Try again later")
+
+    with open(str(AppPaths.profile_pics() / location), 'wb+') as destination:
+        for chunk in file.chunks():
+            destination.write(chunk)
+
+    return ApiResponse.make_success(payload={'handle': record.name})
+
 EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 def validate_email(email):
     if not re.fullmatch(EMAIL_REGEX, email):
         raise ValidationError("Invalid email format", code='invalid_email')
-
-
-class CreateSerializer(s.Serializer):
-    pass
 
 class CreateUserSerializer(CreateSerializer):
 
@@ -57,7 +95,7 @@ class CreateUserSerializer(CreateSerializer):
 
     username = s.CharField(
         max_length=250,
-        validators=[CreateUniqueFieldValidator(
+        validators=[UniqueFieldValidator(
             message="Username already taken",
             queryset=AppUser.objects.all(),
             model_field="username"
@@ -68,7 +106,7 @@ class CreateUserSerializer(CreateSerializer):
         max_length=250,
         validators=[
             validate_email,
-            CreateUniqueFieldValidator(message="Email already taken", queryset=AppUser.objects.all(), model_field="email")
+            UniqueFieldValidator(message="Email already taken", queryset=AppUser.objects.all(), model_field="email")
         ]
     )
 
@@ -81,6 +119,9 @@ class CreateUserSerializer(CreateSerializer):
     address_line_2 = s.CharField(max_length=250)
     age = s.IntegerField(min_value=1)
     about_me = s.CharField()
+
+    profile_pic_handle = s.CharField(required=False, allow_null=True)
+
 
 @api_view(['POST'])
 def signup_user(request: ApiRequest) -> ApiResponse:
@@ -113,6 +154,15 @@ def signup_user(request: ApiRequest) -> ApiResponse:
 
     user.current_api_key = serialized_key
 
+    user.profile_picture = None # type: ignore
+    pic_handle = data.get('profile_pic_handle', None)
+    if pic_handle is not None:
+        try:
+            user.profile_picture = ProfilePicture.objects.get(name=pic_handle)
+        except:
+            # TODO: Do not silently fail like this when invalid picture handle is provided
+            pass
+
     user.save()
 
     return ApiResponse.make_success(
@@ -128,7 +178,7 @@ class LoginSerializer(s.Serializer):
     password = s.CharField()
 
 
-login_failure_execption = ApiException(HTTPStatus.UNAUTHORIZED.value, msg="Invalid username or password")
+login_failure_execption = ApiException(HTTPStatus.UNAUTHORIZED, msg="Invalid username or password")
 
 @api_view(['POST'])
 def login_user(request: ApiRequest) -> ApiResponse:
@@ -161,8 +211,8 @@ def login_user(request: ApiRequest) -> ApiResponse:
 
 @api_view(["GET"])
 @require(
-    'create',
-    FixedContextGenerator(AclContext.singular(Allow, TR.Authenticated, 'create'))
+    'access',
+    FixedContextGenerator(AclContext.trait_singular(TR.Authenticated))
 )
 def user_profile(request: ApiRequest) -> ApiResponse:
     return ApiResponse.make_success(payload="You got it")

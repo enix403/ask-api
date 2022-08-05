@@ -9,6 +9,9 @@ from django.shortcuts import render
 
 class HttpException(Exception):
     def __init__(self, code, msg):
+        if isinstance(code, HTTPStatus):
+            code = code.value
+            
         self.code = code
         self.msg = msg
 

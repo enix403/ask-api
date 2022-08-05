@@ -4,9 +4,10 @@ from django.urls import re_path, path, include
 from app.communication import ApiRequest, ApiResponse, api_view
 
 from app.core.authentication.apiviews import (
+    upload_picture,
     signup_user,
     login_user,
-    user_profile
+    user_profile,
 )
 
 @api_view()
@@ -23,6 +24,7 @@ urlpatterns = [
         path("", v1_index),
 
         path('auth/signup/', signup_user),
+        path('user/upload-picture/', upload_picture),
         path('auth/login/', login_user),
         path('user/profile/', user_profile),
     ]))

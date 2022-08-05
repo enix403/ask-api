@@ -1,7 +1,17 @@
+import uuid
+
 from app.utils.passlib_hash import pbkdf2_sha256
 
 from . import fields as f
 from .core import BaseModel
+
+class ProfilePicture(BaseModel['ProfilePicture']):
+    class Meta:
+        db_table = 'k_profile_pics'
+
+    name = f.CharField(max_length=250, unique=True, db_index=True)
+    location = f.CharField(max_length=250)
+
 
 class UserProfileMixin(f.models.Model):
     class Meta:
@@ -17,7 +27,7 @@ class UserProfileMixin(f.models.Model):
     address_line_2 = f.CharField(max_length=250)
     age = f.IntegerField()
     about_me = f.TextField()
-    # profile_photo
+    profile_picture = f.make_fk(ProfilePicture, column_name='pic_id', null=True)
 
 class TimeStampedModel(f.models.Model):
     class Meta:
@@ -26,6 +36,7 @@ class TimeStampedModel(f.models.Model):
     # See https://docs.djangoproject.com/en/4.1/ref/models/fields/#datefield
     created_at = f.DateTimeField(auto_now_add=True)
     updated_at = f.DateTimeField(auto_now=True)
+
 
 class AppUser(BaseModel['AppUser'], TimeStampedModel, UserProfileMixin):
     class Meta:

@@ -1,4 +1,4 @@
-auth_headersfrom typing import Any, ClassVar, Optional, Type
+from typing import Any, ClassVar, Optional, Type
 from functools import wraps
 
 from auth_core import (
