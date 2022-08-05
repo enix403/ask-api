@@ -15,7 +15,7 @@ from app.exceptions import ApiException, ApiExceptionCollection
 from app.communication import api_view, ApiRequest, ApiResponse
 
 from .keystore import KeyStore
-from .engine import TR, require, ContextGenerator
+from .engine import TR, require, FixedContextGenerator
 
 
 class CreateUniqueFieldValidator:
@@ -157,3 +157,12 @@ def login_user(request: ApiRequest) -> ApiResponse:
             "api_key": user.current_api_key
         }
     )
+
+
+@api_view(["GET"])
+@require(
+    'create',
+    FixedContextGenerator(AclContext.singular(Allow, TR.Authenticated, 'create'))
+)
+def user_profile(request: ApiRequest) -> ApiResponse:
+    return ApiResponse.make_success(payload="You got it")

@@ -5,8 +5,8 @@ from app.utils.passlib_hash import pbkdf2_sha256
 
 class KeyStore:
 
-    class InvalidKeyError(Exception):
-        pass
+    # class InvalidKeyError(Exception):
+        # pass
 
     API_KEY_APP_PREFIX = 'kp.'
     API_KEY_APP_PREFIX_LENGTH = len(API_KEY_APP_PREFIX)
@@ -29,6 +29,12 @@ class KeyStore:
             '.',
             key.digest,
         ]);
+
+    @classmethod
+    def validate_format(cls, user_key: str) -> bool:
+        # enough for now
+        return user_key.startswith(cls.API_KEY_APP_PREFIX)
+
 
     # @classmethod
     # def _hash_impl(cls, serialzed) -> str:

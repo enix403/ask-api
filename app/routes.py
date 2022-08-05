@@ -5,7 +5,8 @@ from app.communication import ApiRequest, ApiResponse, api_view
 
 from app.core.authentication.apiviews import (
     signup_user,
-    login_user
+    login_user,
+    user_profile
 )
 
 @api_view()
@@ -23,5 +24,6 @@ urlpatterns = [
 
         path('auth/signup/', signup_user),
         path('auth/login/', login_user),
+        path('user/profile/', user_profile),
     ]))
 ]

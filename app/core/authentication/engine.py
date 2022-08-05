@@ -1,8 +1,7 @@
-from typing import Any, ClassVar, Optional, Type
+auth_headersfrom typing import Any, ClassVar, Optional, Type
 from functools import wraps
 
 from auth_core import (
-    AuthorizationPolicy,
     AuthzGate,
     AgentTraitCollection,
     AclAuthorizationPolicy
@@ -22,10 +21,16 @@ class ContextGenerator:
         """
         return None
 
+class FixedContextGenerator(ContextGenerator):
+    def __init__(self, ctx: Any):
+        self.ctx = ctx
+
+    def generate(self, request: Optional[ApiRequest] = None):
+        return self.ctx
+
 class TR:
     Everyone = 'sys.Everyone'
     Authenticated = 'sys.authncd'
-
 
 class SimpleTraitCollection(AgentTraitCollection):
     def get_effective_traits(self, user: Optional[AppUser]):
@@ -48,7 +53,7 @@ class ApiPermissionGate:
     user_not_found_exp = ApiExceptionCollection.Forbidden.copy_with(msg="Permission Denied: User not found")
 
     # make sure it does not contain a whitespace
-    _TOKEN_BEARER_PREFIX = 'API-Key'.strip()
+    _TOKEN_BEARER_PREFIX = 'Bearer'.strip()
 
     def __init__(self, request):
         self.user = self._load_user(request)
@@ -70,6 +75,7 @@ class ApiPermissionGate:
 
     def _load_user(self, request) -> Optional[AppUser]:
         """ Load and return the user object from database or return None if not authenticated""" 
+
         api_key = self.get_token(request.META.get('HTTP_AUTHORIZATION', ''))
 
         # If no token is provided, show the regular 'permission denied' (default) error message
@@ -77,10 +83,10 @@ class ApiPermissionGate:
             return None
 
         try:
-            hashed = KeyStore.hash_user(api_key)
-            return AppUser.objects.filter(current_api_key=hashed).get()              
-        except KeyStore.InvalidKeyError:
-            self.set_next_exception(self.invalid_key_exp)
+            if not KeyStore.validate_format(api_key):
+                self.set_next_exception(self.invalid_key_exp)
+            else:
+                return AppUser.objects.filter(current_api_key=api_key).get()
         except AppUser.DoesNotExist:
             self.set_next_exception(self.user_not_found_exp)
 
@@ -90,15 +96,6 @@ class ApiPermissionGate:
     def require(self, perm, context):
         if not self.gate.allowed(perm, context):
             raise self.next_exception
-
-    # def require_one(self, perms, context):
-    #     if not self.gate.allowed_one(perms, context):
-    #         raise self.next_exception
-
-    # def require_all(self, perms, context):
-    #     if not self.gate.allowed_all(perms, context):
-    #         raise self.next_exception
-
 
 
 def require(perm: str, context_gen: ContextGenerator):

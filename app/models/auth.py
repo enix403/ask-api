@@ -32,7 +32,8 @@ class AppUser(BaseModel['AppUser'], TimeStampedModel, UserProfileMixin):
         db_table = 'k_app_users'
 
     # Might wanna store sort of "api keys history" in the future. So `current_api_key` makes more sense
-    # Stores the hash of the api key instead of key itself
+    # For now it stores the actual key, needed for a lookup. In the future it should be updated to
+    # hold the hash
     current_api_key = f.CharField(max_length=250, db_index=True)
 
     username = f.CharField(max_length=250)
