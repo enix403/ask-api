@@ -1,63 +1,35 @@
-import re
 import uuid
 
 from pathlib import Path
 from http import HTTPStatus
 from typing import Optional, Any, cast
 
-from rest_framework import serializers as s
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import ValidationError
-
-from django.conf import settings
 
 from auth_core import AclContext
 
 from app.app_paths import AppPaths
-from app.utils.qs import qs_exists, qs_filter
 from app.models.auth import AppUser, ProfilePicture
-from app.exceptions import ApiException, ApiExceptionCollection
+from app.exceptions import ApiException
 from app.communication import (
     ApiRequest,
     ApiResponse,
 )
 
 from .keystore import KeyStore
-from .engine import TR, require, FixedContextGenerator, ApiPermissionGate
+from .engine import TR, require, FixedContextGenerator
+from .serializers import (
+    UserProfileSerializer,
+    CreateUserSerializer,
+    LoginSerializer,
+    UserProfileView,
+    UpdateUserCredSerializer
+)
 
 
 def extract_user(request: ApiRequest) -> AppUser:
     return cast(AppUser, request.user)
 
-class SimpleSerializer(s.Serializer):
-    pass
-
-
-class UniqueFieldValidator:
-    """
-    Validator that corresponds to `unique=True` on a model field.
-
-    Should be applied to an individual field on the serializer.
-    """
-
-    message = "This field must be unique."
-
-    def __init__(self, queryset, message=None, model_field=None):
-        self.queryset = queryset
-        self.message = message or self.message
-        self.model_field = model_field
-
-
-    def __call__(self, value):
-
-        model_field = self.model_field or "id"
-
-        if qs_exists(qs_filter(self.queryset, **{ model_field: value })):
-            raise ValidationError(self.message, code='create_unique')
-
-
-def handle_of(profile: ProfilePicture):
-    return profile.name
 
 @api_view(['POST'])
 def upload_picture(request: ApiRequest) -> ApiResponse:
@@ -84,65 +56,26 @@ def upload_picture(request: ApiRequest) -> ApiResponse:
         for chunk in file.chunks():
             destination.write(chunk)
 
-    return ApiResponse.make_success(payload={'handle': handle_of(record)})
+    return ApiResponse.make_success(payload={'handle': ProfilePicture.handle_of(record)})
 
 
-EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
-def validate_email(email):
-    if not re.fullmatch(EMAIL_REGEX, email):
-        raise ValidationError("Invalid email format", code='invalid_email')
-
-
-class UserProfileSerializer(SimpleSerializer):
-    username = s.CharField()
-    email = s.CharField()
-
-    first_name = s.CharField(max_length=250)
-    last_name = s.CharField(max_length=250)
-
-    phone_number = s.CharField(max_length=100)
-    post_code = s.CharField(max_length=50)
-    address_line_1 = s.CharField(max_length=250)
-    address_line_2 = s.CharField(max_length=250)
-    age = s.IntegerField(min_value=1)
-    about_me = s.CharField()
-
-    profile_pic_handle = s.CharField(required=False, allow_null=True)
-
-
-class CreateUserSerializer(UserProfileSerializer):
-    username = s.CharField(
-        max_length=250,
-        validators=[UniqueFieldValidator(
-            message="Username already taken",
-            queryset=AppUser.objects.all(),
-            model_field="username"
-        )]
-    )
-    password = s.CharField()
-    email = s.CharField(
-        max_length=250,
-        validators=[
-            validate_email,
-            UniqueFieldValidator(message="Email already taken", queryset=AppUser.objects.all(), model_field="email")
-        ]
-    )
 
 
 @api_view(['POST'])
 def signup_user(request: ApiRequest) -> ApiResponse:
 
     ss = CreateUserSerializer(data=request.data) # type: ignore
+    ss.validate_api()
 
-    if not ss.is_valid():
-        raise ApiExceptionCollection.UnprocessableEntity.copy_with(
-            msg="Invalid form values",
-            data=ss.errors
-        )
 
     data = ss.validated_data # type: dict[Any, Any]
 
     user = AppUser.make(data.get('username'), data.get('password'))
+
+    user_key = KeyStore.generate_fresh()
+    serialized_key = KeyStore.serialize_user(user_key)
+
+    user.current_api_key = serialized_key
 
     user.first_name = data['first_name']
     user.last_name = data['last_name']
@@ -155,19 +88,8 @@ def signup_user(request: ApiRequest) -> ApiResponse:
     user.age = data['age']
     user.about_me = data['about_me']
 
-    user_key = KeyStore.generate_fresh()
-    serialized_key = KeyStore.serialize_user(user_key)
-
-    user.current_api_key = serialized_key
-
-    user.profile_picture = None # type: ignore
     pic_handle = data.get('profile_pic_handle', None)
-    if pic_handle is not None:
-        try:
-            user.profile_picture = ProfilePicture.objects.get(name=pic_handle)
-        except:
-            # TODO: Do not silently fail like this when invalid picture handle is provided
-            pass
+    user.profile_picture = ProfilePicture.from_handle(pic_handle) # type: ignore
 
     user.save()
 
@@ -179,23 +101,13 @@ def signup_user(request: ApiRequest) -> ApiResponse:
     )
 
 
-class LoginSerializer(s.Serializer):
-    username = s.CharField()
-    password = s.CharField()
-
-
 login_failure_execption = ApiException(HTTPStatus.UNAUTHORIZED, msg="Invalid username or password")
 
 @api_view(['POST'])
 def login_user(request: ApiRequest) -> ApiResponse:
 
     ss = LoginSerializer(data=request.data) # type: ignore
-
-    if not ss.is_valid():
-        raise ApiExceptionCollection.UnprocessableEntity.copy_with(
-            msg="Invalid form values",
-            data=ss.errors
-        )
+    ss.validate_api()
 
     data = ss.validated_data # type: dict[Any, Any]
 
@@ -218,12 +130,13 @@ def login_user(request: ApiRequest) -> ApiResponse:
 
 ctx_authenticated = AclContext.trait_singular(TR.Authenticated)
 
+
 @api_view(["GET"])
 @require('access', FixedContextGenerator(ctx_authenticated))
 def user_profile(request: ApiRequest) -> ApiResponse:
     user = extract_user(request)
 
-    ss = UserProfileSerializer({
+    ss = UserProfileView({
         "username": user.username,
         "email": user.email,
         "first_name": user.first_name,
@@ -234,8 +147,63 @@ def user_profile(request: ApiRequest) -> ApiResponse:
         "address_line_2": user.address_line_2,
         "age": user.age,
         "about_me": user.about_me,
-        "profile_pic_handle": handle_of(user.profile_picture),
+        "profile_pic_handle": ProfilePicture.handle_of(user.profile_picture),
     }) # type: ignore
 
 
     return ApiResponse.make_success(payload=ss.data)
+
+
+
+@api_view(["POST"])
+@require('access', FixedContextGenerator(ctx_authenticated))
+def user_profile_update(request: ApiRequest) -> ApiResponse:
+    user = extract_user(request)
+
+    ss = UserProfileSerializer(data=request.data) # type: ignore
+    ss.validate_api()
+
+    data = ss.validated_data
+
+    user.first_name = data['first_name']
+    user.last_name = data['last_name']
+
+    user.phone_number = data['phone_number']
+    user.post_code = data['post_code']
+    user.address_line_1 = data['address_line_1']
+    user.address_line_2 = data['address_line_2']
+    user.age = data['age']
+    user.about_me = data['about_me']
+
+    pic_handle = data.get('profile_pic_handle', None)
+    user.profile_picture = ProfilePicture.from_handle(pic_handle) # type: ignore
+
+    user.save()
+
+    data['profile_pic_handle'] = ProfilePicture.handle_of(user.profile_picture)
+
+    return ApiResponse.make_success(payload=data)
+
+
+@api_view(["POST"])
+@require('access', FixedContextGenerator(ctx_authenticated))
+def user_cred_update(request: ApiRequest) -> ApiResponse:
+    user = extract_user(request)
+
+    ss = UpdateUserCredSerializer(user=user, data=request.data) # type: ignore
+    ss.validate_api()
+
+    data = ss.validated_data
+
+    username = data.get('username', None)
+    email = data.get('email', None)
+
+    if username is not None:
+        user.username = username
+
+    if email is not None:
+        user.email = email
+
+    user.save()
+
+    return ApiResponse.make_success(payload=ss.validated_data)

@@ -1,4 +1,4 @@
-import uuid
+from typing import Any, Optional
 
 from app.utils.passlib_hash import pbkdf2_sha256
 
@@ -11,6 +11,21 @@ class ProfilePicture(BaseModel['ProfilePicture']):
 
     name = f.CharField(max_length=250, unique=True, db_index=True)
     location = f.CharField(max_length=250)
+
+    @staticmethod
+    def handle_of(profile: Optional['ProfilePicture']):
+        if profile is None:
+            return None
+
+        # Might use a different field as handle in the future
+        return profile.name
+
+    @staticmethod
+    def from_handle(handle: Any) -> Optional['ProfilePicture']:
+        if handle is None:
+            return None
+
+        return ProfilePicture.objects.filter(name=handle).first()
 
 
 class UserProfileMixin(f.models.Model):
@@ -28,6 +43,7 @@ class UserProfileMixin(f.models.Model):
     age = f.IntegerField()
     about_me = f.TextField()
     profile_picture = f.make_fk(ProfilePicture, column_name='pic_id', null=True)
+
 
 class TimeStampedModel(f.models.Model):
     class Meta:

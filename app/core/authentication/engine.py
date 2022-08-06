@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Optional, Type
+from typing import Any, Optional
 from functools import wraps
 
     # AuthzGate,
@@ -10,7 +10,6 @@ from auth_core import (
 from app.exceptions import ApiException, ApiExceptionCollection
 from app.communication import ApiRequest
 from app.models.auth import AppUser
-from app.utils import to_int
 
 from .keystore import KeyStore
 
@@ -22,6 +21,7 @@ class ContextGenerator:
         return None
 
 class FixedContextGenerator(ContextGenerator):
+    __slots__ = ('ctx',)
     def __init__(self, ctx: Any):
         self.ctx = ctx
 

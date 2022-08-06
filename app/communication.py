@@ -20,8 +20,6 @@ class ApiRequest(_Request):
     data: QueryDict
     user: Optional[AppUser]
 
-# It looks ugly having 'import rest_framework.response.Response' everywhere,
-# plus there is already an `ApiRequest` class anyway, so why not give it a friend
 class ApiResponse(_Response):
     @classmethod
     def make_success(cls, msg="", payload=None):

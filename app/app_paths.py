@@ -1,8 +1,6 @@
 from pathlib import Path
 from django.conf import settings
 
-# PROFILE_PICS_STORAGE = Path(settings.MEDIA_ROOT) / 'profile_pics'
-# PROFILE_PICS_STORAGE.mkdir(parents=True, exist_ok=True)/
 class AppPaths:
 
     _profile_pics = None

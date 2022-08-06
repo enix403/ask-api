@@ -8,6 +8,8 @@ from app.core.authentication.apiviews import (
     signup_user,
     login_user,
     user_profile,
+    user_profile_update,
+    user_cred_update
 )
 
 @api_view()
@@ -16,7 +18,7 @@ def not_implemented(_):
 
 @api_view()
 def v1_index(_):
-    return ApiResponse('Welcome to API-v1')
+    return ApiResponse('Welcome to API v1')
 
 urlpatterns = [
     path("", not_implemented),
@@ -27,5 +29,8 @@ urlpatterns = [
         path('user/upload-picture/', upload_picture),
         path('auth/login/', login_user),
         path('user/profile/', user_profile),
+        path('user/profile/update/', user_profile_update),
+        path('user/creds/update/', user_cred_update),
+        # path('user/password/update/', user_profile_update),
     ]))
 ]
