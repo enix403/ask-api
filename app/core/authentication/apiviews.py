@@ -103,6 +103,7 @@ def signup_user(request: ApiRequest) -> ApiResponse:
 
 
 login_failure_execption = ApiException(HTTPStatus.UNAUTHORIZED, msg="Invalid username or password")
+user_inactive_execption = ApiException(HTTPStatus.UNAUTHORIZED, msg="User's account is not active")
 
 @api_view(['POST'])
 def login_user(request: ApiRequest) -> ApiResponse:
@@ -117,8 +118,11 @@ def login_user(request: ApiRequest) -> ApiResponse:
     except AppUser.DoesNotExist:
         raise login_failure_execption
 
-    if not user.verify_password(data['password']):
+    if user.is_deleted == 1 or not user.verify_password(data['password']):
         raise login_failure_execption
+
+    if user.is_active == 0:
+        raise user_inactive_execption
 
     return ApiResponse.make_success(
         msg="Login successful",

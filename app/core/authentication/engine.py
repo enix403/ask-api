@@ -51,6 +51,7 @@ class ApiPermissionGate:
 
     invalid_key_exp = ApiExceptionCollection.Forbidden.copy_with(msg="Permission Denied: Invalid Key")
     user_not_found_exp = ApiExceptionCollection.Forbidden.copy_with(msg="Permission Denied: User not found")
+    user_not_active_exp = ApiExceptionCollection.Forbidden.copy_with(msg="Permission Denied: User not active")
 
     # make sure it does not contain a whitespace
     _TOKEN_BEARER_PREFIX = 'Bearer'.strip()
@@ -79,13 +80,16 @@ class ApiPermissionGate:
         if not api_key:
             return None
 
-        try:
-            if not KeyStore.validate_format(api_key):
-                self.set_next_exception(self.invalid_key_exp)
+        if not KeyStore.validate_format(api_key):
+            self.set_next_exception(self.invalid_key_exp)
+        else:
+            user = AppUser.objects.filter(current_api_key=api_key).first()
+            if user is None or user.is_deleted == 1:
+                self.set_next_exception(self.user_not_found_exp)
+            elif user.is_active == 0:
+                self.set_next_exception(self.user_not_active_exp)
             else:
-                return AppUser.objects.filter(current_api_key=api_key).get()
-        except AppUser.DoesNotExist:
-            self.set_next_exception(self.user_not_found_exp)
+                return user
 
         return None
 

@@ -5,6 +5,26 @@ from app.utils.passlib_hash import pbkdf2_sha256
 from . import fields as f
 from .core import BaseModel
 
+class TimeStampedModel(f.models.Model):
+    class Meta:
+        abstract = True
+
+    # See https://docs.djangoproject.com/en/4.1/ref/models/fields/#datefield
+    created_at = f.DateTimeField(auto_now_add=True)
+    updated_at = f.DateTimeField(auto_now=True)
+
+
+class StatusTrackedModel(f.models.Model):
+    class Meta:
+        abstract = True
+
+    is_active = f.PositiveTinyIntegerField(default=1)
+    is_deleted = f.PositiveTinyIntegerField(default=0)
+
+
+
+# ------------------------------------------------
+
 class ProfilePicture(BaseModel['ProfilePicture']):
     class Meta:
         db_table = 'k_profile_pics'
@@ -34,10 +54,6 @@ class UserProfileMixin(f.models.Model):
 
     phone_number = f.CharField(max_length=100)
     post_code = f.CharField(max_length=50)
-    # city_id
-    # language_id
-    # gender_id
-    # country_id
     address_line_1 = f.CharField(max_length=250)
     address_line_2 = f.CharField(max_length=250)
     age = f.IntegerField()
@@ -45,16 +61,7 @@ class UserProfileMixin(f.models.Model):
     profile_picture = f.make_fk(ProfilePicture, column_name='pic_id', null=True)
 
 
-class TimeStampedModel(f.models.Model):
-    class Meta:
-        abstract = True
-
-    # See https://docs.djangoproject.com/en/4.1/ref/models/fields/#datefield
-    created_at = f.DateTimeField(auto_now_add=True)
-    updated_at = f.DateTimeField(auto_now=True)
-
-
-class AppUser(BaseModel['AppUser'], TimeStampedModel, UserProfileMixin):
+class AppUser(BaseModel['AppUser'], TimeStampedModel, StatusTrackedModel, UserProfileMixin):
     class Meta:
         db_table = 'k_app_users'
 
@@ -70,11 +77,6 @@ class AppUser(BaseModel['AppUser'], TimeStampedModel, UserProfileMixin):
     last_name = f.CharField(max_length=250)
 
     email = f.CharField(max_length=250)
-
-    is_active = f.PositiveTinyIntegerField(default=1)
-    is_deleted = f.PositiveTinyIntegerField(default=0)
-
-    # modified_by
 
     @classmethod
     def make(cls, username, password):
