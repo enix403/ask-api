@@ -58,6 +58,7 @@ class ApiSerializer(s.Serializer):
                 msg="Invalid form values",
                 data=self.errors
             )
+        return self
 
 
 class UserProfileSerializer(ApiSerializer):
@@ -131,3 +132,11 @@ class LoginSerializer(ApiSerializer):
 class UserProfileView(UserProfileSerializer):
     username = s.CharField()
     email = s.CharField()
+
+
+class UpdatePasswordSerializer(ApiSerializer):
+    password = s.CharField(min_length=3)
+
+    def validate(self, data):
+        # TODO: Add password security
+        return data

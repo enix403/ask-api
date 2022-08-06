@@ -23,7 +23,8 @@ from .serializers import (
     CreateUserSerializer,
     LoginSerializer,
     UserProfileView,
-    UpdateUserCredSerializer
+    UpdateUserCredSerializer,
+    UpdatePasswordSerializer
 )
 
 
@@ -207,3 +208,16 @@ def user_cred_update(request: ApiRequest) -> ApiResponse:
     user.save()
 
     return ApiResponse.make_success(payload=ss.validated_data)
+
+
+@api_view(["POST"])
+@require('access', FixedContextGenerator(ctx_authenticated))
+def user_password_update(request: ApiRequest) -> ApiResponse:
+    ss = UpdatePasswordSerializer(data=request.data).validate_api() # type: ignore
+
+    user = extract_user(request)
+    user.set_password(ss.validated_data['password'])
+
+    user.save()
+
+    return ApiResponse.make_success(msg="Password updated successfully")

@@ -9,7 +9,8 @@ from app.core.authentication.apiviews import (
     login_user,
     user_profile,
     user_profile_update,
-    user_cred_update
+    user_cred_update,
+    user_password_update
 )
 
 @api_view()
@@ -31,6 +32,6 @@ urlpatterns = [
         path('user/profile/', user_profile),
         path('user/profile/update/', user_profile_update),
         path('user/creds/update/', user_cred_update),
-        # path('user/password/update/', user_profile_update),
+        path('user/password/update/', user_password_update),
     ]))
 ]

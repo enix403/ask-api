@@ -80,8 +80,11 @@ class AppUser(BaseModel['AppUser'], TimeStampedModel, UserProfileMixin):
     def make(cls, username, password):
         user = cls()
         user.username = username
-        user.password_hash = pbkdf2_sha256.using(rounds=29000, salt_size=16).hash(password)
+        user.set_password(password)
         return user
+
+    def set_password(self, password):
+        self.password_hash = pbkdf2_sha256.using(rounds=29000, salt_size=16).hash(password)
 
     def verify_password(self, password):
         return pbkdf2_sha256.verify(password, self.password_hash)
