@@ -3,7 +3,7 @@ import uuid
 
 from pathlib import Path
 from http import HTTPStatus
-from typing import Optional, Any
+from typing import Optional, Any, cast
 
 from rest_framework import serializers as s
 from rest_framework.decorators import api_view
@@ -23,10 +23,13 @@ from app.communication import (
 )
 
 from .keystore import KeyStore
-from .engine import TR, require, FixedContextGenerator
+from .engine import TR, require, FixedContextGenerator, ApiPermissionGate
 
 
-class CreateSerializer(s.Serializer):
+def extract_user(request: ApiRequest) -> AppUser:
+    return cast(AppUser, request.user)
+
+class SimpleSerializer(s.Serializer):
     pass
 
 
@@ -53,8 +56,8 @@ class UniqueFieldValidator:
             raise ValidationError(self.message, code='create_unique')
 
 
-# PROFILE_PICS_STORAGE = Path(settings.MEDIA_ROOT) / 'profile_pics'
-# PROFILE_PICS_STORAGE.mkdir(parents=True, exist_ok=True)
+def handle_of(profile: ProfilePicture):
+    return profile.name
 
 @api_view(['POST'])
 def upload_picture(request: ApiRequest) -> ApiResponse:
@@ -81,18 +84,33 @@ def upload_picture(request: ApiRequest) -> ApiResponse:
         for chunk in file.chunks():
             destination.write(chunk)
 
-    return ApiResponse.make_success(payload={'handle': record.name})
+    return ApiResponse.make_success(payload={'handle': handle_of(record)})
+
 
 EMAIL_REGEX = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 def validate_email(email):
     if not re.fullmatch(EMAIL_REGEX, email):
         raise ValidationError("Invalid email format", code='invalid_email')
 
-class CreateUserSerializer(CreateSerializer):
 
-    class KMeta:
-        ref_model = AppUser
+class UserProfileSerializer(SimpleSerializer):
+    username = s.CharField()
+    email = s.CharField()
 
+    first_name = s.CharField(max_length=250)
+    last_name = s.CharField(max_length=250)
+
+    phone_number = s.CharField(max_length=100)
+    post_code = s.CharField(max_length=50)
+    address_line_1 = s.CharField(max_length=250)
+    address_line_2 = s.CharField(max_length=250)
+    age = s.IntegerField(min_value=1)
+    about_me = s.CharField()
+
+    profile_pic_handle = s.CharField(required=False, allow_null=True)
+
+
+class CreateUserSerializer(UserProfileSerializer):
     username = s.CharField(
         max_length=250,
         validators=[UniqueFieldValidator(
@@ -109,18 +127,6 @@ class CreateUserSerializer(CreateSerializer):
             UniqueFieldValidator(message="Email already taken", queryset=AppUser.objects.all(), model_field="email")
         ]
     )
-
-    first_name = s.CharField(max_length=250)
-    last_name = s.CharField(max_length=250)
-
-    phone_number = s.CharField(max_length=100)
-    post_code = s.CharField(max_length=50)
-    address_line_1 = s.CharField(max_length=250)
-    address_line_2 = s.CharField(max_length=250)
-    age = s.IntegerField(min_value=1)
-    about_me = s.CharField()
-
-    profile_pic_handle = s.CharField(required=False, allow_null=True)
 
 
 @api_view(['POST'])
@@ -209,10 +215,27 @@ def login_user(request: ApiRequest) -> ApiResponse:
     )
 
 
+
+ctx_authenticated = AclContext.trait_singular(TR.Authenticated)
+
 @api_view(["GET"])
-@require(
-    'access',
-    FixedContextGenerator(AclContext.trait_singular(TR.Authenticated))
-)
+@require('access', FixedContextGenerator(ctx_authenticated))
 def user_profile(request: ApiRequest) -> ApiResponse:
-    return ApiResponse.make_success(payload="You got it")
+    user = extract_user(request)
+
+    ss = UserProfileSerializer({
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "phone_number": user.phone_number,
+        "post_code": user.post_code,
+        "address_line_1": user.address_line_1,
+        "address_line_2": user.address_line_2,
+        "age": user.age,
+        "about_me": user.about_me,
+        "profile_pic_handle": handle_of(user.profile_picture),
+    }) # type: ignore
+
+
+    return ApiResponse.make_success(payload=ss.data)

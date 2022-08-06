@@ -1,8 +1,8 @@
 from typing import Any, ClassVar, Optional, Type
 from functools import wraps
 
+    # AuthzGate,
 from auth_core import (
-    AuthzGate,
     AgentTraitCollection,
     AclAuthorizationPolicy
 )
@@ -46,7 +46,7 @@ class SimpleTraitCollection(AgentTraitCollection):
 
 
 class ApiPermissionGate:
-    authz_policy = AclAuthorizationPolicy()
+    policy = AclAuthorizationPolicy()
     next_exception: Exception = ApiExceptionCollection.Forbidden.copy_with(msg="Permission Denied")
 
     invalid_key_exp = ApiExceptionCollection.Forbidden.copy_with(msg="Permission Denied: Invalid Key")
@@ -57,10 +57,7 @@ class ApiPermissionGate:
 
     def __init__(self, request):
         self.user = self._load_user(request)
-        self.gate = AuthzGate(SimpleTraitCollection(self.user), self.authz_policy)
-
-    def inner(self):
-        return self.gate
+        self._traits = SimpleTraitCollection(self.user) 
 
     def set_next_exception(self, exp: Exception):
         self.next_exception = exp
@@ -92,17 +89,20 @@ class ApiPermissionGate:
 
         return None
 
+    def force_deny_request(self):
+        raise self.next_exception
 
     def require(self, perm, context):
-        if not self.gate.allowed(perm, context):
-            raise self.next_exception
+        self.policy.permits(perm, context, self._traits) or self.force_deny_request()
 
 
 def require(perm: str, context_gen: ContextGenerator):
     def wrapper(func):
         @wraps(func)
         def _f(request, *args, **kwargs):
-            ApiPermissionGate(request).require(perm, context_gen.generate(request))
+            gate = ApiPermissionGate(request)
+            gate.require(perm, context_gen.generate(request))
+            request.user = gate.user
             return func(request, *args, **kwargs)
 
         return _f
