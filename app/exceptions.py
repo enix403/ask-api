@@ -45,7 +45,7 @@ def response_exception(request: HttpRequest, exp: HttpException):
 # --------------------------------------------------
 
 class ApiException(HttpException):
-    def __init__(self, code=500, msg=None, data=None):
+    def __init__(self, code=500, msg="", data=None):
         super().__init__(code, msg)
         self.data = data
 

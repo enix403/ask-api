@@ -132,6 +132,7 @@ class LoginSerializer(ApiSerializer):
 class UserProfileView(UserProfileSerializer):
     username = s.CharField()
     email = s.CharField()
+    profile_pic_location = s.CharField()
 
 
 class UpdatePasswordSerializer(ApiSerializer):

@@ -141,6 +141,8 @@ ctx_authenticated = AclContext.trait_singular(TR.Authenticated)
 def user_profile(request: ApiRequest) -> ApiResponse:
     user = extract_user(request)
 
+    pf = user.profile_picture
+
     ss = UserProfileView({
         "username": user.username,
         "email": user.email,
@@ -152,7 +154,8 @@ def user_profile(request: ApiRequest) -> ApiResponse:
         "address_line_2": user.address_line_2,
         "age": user.age,
         "about_me": user.about_me,
-        "profile_pic_handle": ProfilePicture.handle_of(user.profile_picture),
+        "profile_pic_handle": ProfilePicture.handle_of(pf),
+        "profile_pic_location": None if pf is None else pf.location,
     }) # type: ignore
 
 
