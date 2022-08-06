@@ -9,6 +9,7 @@ from app.bootstrap.config import Config
 from app.exceptions import (
     response_exception,
     HttpException,
+    ApiException,
     HTTPStatus
 )
 

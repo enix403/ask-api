@@ -16,17 +16,7 @@ class ExceptionHandlerMiddleware:
 
     def process_exception(self, request: HttpRequest, exp: Exception):
 
-        if isinstance(exp, ApiException):
-            response = JsonResponse({
-                'type': 'error',
-                'message': exp.msg, 
-                'payload': exp.data
-            }, status=exp.code)
-
-            return response
-
-        # Note the ordering of if-elif statements. ApiException itself is a subclass of HttpException
-        elif isinstance(exp, HttpException):
+        if isinstance(exp, HttpException):
             return response_exception(request, exp)
 
         return None

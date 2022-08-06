@@ -3,8 +3,8 @@ import copy
 
 from http import HTTPStatus
 
-from django.http import HttpRequest
-    
+from django.http import HttpRequest, HttpResponse, JsonResponse
+
 from django.shortcuts import render
 
 class HttpException(Exception):
@@ -25,10 +25,22 @@ class HttpException(Exception):
 # --------------------------------------------------
 
 def response_exception(request: HttpRequest, exp: HttpException):
-    return render(request, 'main/errors/generic.html', {
+    if isinstance(exp, ApiException):
+        return JsonResponse({
+            'type': 'error',
+            'message': exp.msg,
+            'payload': exp.data
+        }, status=exp.code)
+
+    return HttpResponse(exp.msg, status=exp.code, content_type="text/plain")
+
+    # TODO: support HTML execptions
+    """
+    return render(request, 'path/to/generic-error.html', {
         "code": exp.code,
         "msg": exp.msg
     }, status=exp.code)
+    """
 
 # --------------------------------------------------
 

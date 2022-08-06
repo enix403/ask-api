@@ -70,7 +70,7 @@ class UserProfileSerializer(ApiSerializer):
     address_line_1 = s.CharField(max_length=250)
     address_line_2 = s.CharField(max_length=250)
     age = s.IntegerField(min_value=1)
-    about_me = s.CharField()
+    about_me = s.CharField(allow_blank=True)
 
     profile_pic_handle = s.CharField(required=False, allow_null=True)
 
