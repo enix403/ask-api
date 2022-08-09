@@ -1,5 +1,5 @@
 
-This modules contains the core of authentication and authorization system. It is largely inspired by [Pyramid's authurization approach][pyramid-auth], but the basic concepts are given here.
+This modules contains the core of authentication and authorization system. It is largely inspired by [Pyramid's authorization approach][pyramid-auth], but the basic concepts are given here.
 
 ## Terminology
 
