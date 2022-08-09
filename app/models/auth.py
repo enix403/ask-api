@@ -22,7 +22,6 @@ class StatusTrackedModel(f.models.Model):
     is_deleted = f.PositiveTinyIntegerField(default=0)
 
 
-
 # ------------------------------------------------
 
 class ProfilePicture(BaseModel['ProfilePicture']):
@@ -30,6 +29,8 @@ class ProfilePicture(BaseModel['ProfilePicture']):
         db_table = 'k_profile_pics'
 
     name = f.CharField(max_length=250, unique=True, db_index=True)
+
+    # `location` is just name + extension
     location = f.CharField(max_length=250)
 
     @staticmethod
@@ -65,7 +66,7 @@ class AppUser(BaseModel['AppUser'], TimeStampedModel, StatusTrackedModel, UserPr
     class Meta:
         db_table = 'k_app_users'
 
-    # Might wanna store sort of "api keys history" in the future. So `current_api_key` makes more sense
+    # Might want to store some sort of "api keys history" in the future. So `current_api_key` makes more sense
     # For now it stores the actual key, needed for a lookup. In the future it should be updated to
     # hold the hash
     current_api_key = f.CharField(max_length=250, db_index=True)

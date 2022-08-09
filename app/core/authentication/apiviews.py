@@ -68,7 +68,6 @@ def signup_user(request: ApiRequest) -> ApiResponse:
     ss = CreateUserSerializer(data=request.data) # type: ignore
     ss.validate_api()
 
-
     data = ss.validated_data # type: dict[Any, Any]
 
     user = AppUser.make(data.get('username'), data.get('password'))
@@ -102,6 +101,7 @@ def signup_user(request: ApiRequest) -> ApiResponse:
     )
 
 
+# Instantiate most used exceptions for performance
 login_failure_execption = ApiException(HTTPStatus.UNAUTHORIZED, msg="Invalid username or password")
 user_inactive_execption = ApiException(HTTPStatus.UNAUTHORIZED, msg="User's account is not active")
 

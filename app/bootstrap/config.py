@@ -3,7 +3,7 @@ from typing import ClassVar, Any
 import envtoml
 from app.utils import resolve_root
 
-
+# A helper class to manage application wide configuration at runtime
 class Config:
     _config_dict: ClassVar[dict]
 
@@ -22,6 +22,7 @@ class Config:
         """
         if not key:
             raise KeyError("Invalid key")
+            
         current = cls._config_dict
         for p in key.split('.'):
             try:

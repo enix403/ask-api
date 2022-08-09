@@ -3,6 +3,8 @@
 # completions from python language server. This file removes typing.Generic from list of class bases
 # of the model classes so that Django doesn't explode 
 
+# See https://github.com/typeddjango/django-stubs/issues/299
+
 from django.db.migrations.state import ModelState
 from typing import Generic
 

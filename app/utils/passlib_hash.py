@@ -1,5 +1,7 @@
 # type: ignore
 
+# OK this file exists only for proper typechecking, since passlib has some issues regarding typesafe imports
+
 from typing import TYPE_CHECKING
 
 from passlib.hash import (

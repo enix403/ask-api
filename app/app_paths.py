@@ -1,6 +1,7 @@
 from pathlib import Path
 from django.conf import settings
 
+# An everyday static path maanger :)
 class AppPaths:
 
     _profile_pics = None

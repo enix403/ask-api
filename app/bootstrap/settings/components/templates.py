@@ -1,9 +1,9 @@
-from app.utils import resolve_root
+from app.utils import resolve_root, root_directory
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ resolve_root('app/templates') ],
+        'DIRS': [ root_directory(['app', 'templates'], create_missing=True) ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

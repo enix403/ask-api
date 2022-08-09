@@ -10,7 +10,6 @@ from app.bootstrap.settings.components.middleware import (
 )
 
 DEBUG = True
-# DEBUG = False
 
 INSTALLED_APPS.extend([
     'debug_toolbar',

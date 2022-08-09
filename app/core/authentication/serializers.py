@@ -53,6 +53,7 @@ class UniqueFieldValidator:
 
 class ApiSerializer(s.Serializer):
     def validate_api(self):
+        """ Raise ApiException on failed validation """
         if not self.is_valid():
             raise ApiExceptionCollection.UnprocessableEntity.copy_with(
                 msg="Invalid form values",
@@ -139,5 +140,5 @@ class UpdatePasswordSerializer(ApiSerializer):
     password = s.CharField(min_length=3)
 
     def validate(self, data):
-        # TODO: Add password security
+        # TODO: Add password strength check
         return data

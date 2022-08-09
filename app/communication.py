@@ -12,6 +12,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 
 from app.models.auth import AppUser
 
+# Just rest_framework.request.Request, but with typehints
 class ApiRequest(_Request):
     COOKIES: dict[str, str]
     FILES: MultiValueDict[str, UploadedFile]
@@ -21,6 +22,7 @@ class ApiRequest(_Request):
     user: Optional[AppUser]
 
 class ApiResponse(_Response):
+    # All responses need to have the same body format, hence these helper functions
     @classmethod
     def make_success(cls, msg="", payload=None):
         return cls({
